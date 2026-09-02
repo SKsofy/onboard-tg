@@ -8,27 +8,27 @@
 //  no-op: локальная разработка не падает и не мусорит в проде.
 //
 //  Имя воронки: funnel = "tg_bot" («Из бота ТГ») — super property,
-//  едет со ВСЕМИ событиями, включая $autocapture. Ответы квиза
-//  (scenario, pain) тоже регистрируются super properties — так
-//  autocapture-клики и pageview сегментируются по ним без джойнов.
+//  едет со ВСЕМИ событиями, включая $autocapture. Сценарий из
+//  ссылки поста регистрируется super property — autocapture-клики
+//  и pageview сегментируются по нему без джойнов.
 //
-//  События по шагам ТЗ (все едут с scenario, pain, utm_*):
-//   1. клик по ссылке из поста — на стороне канала, не здесь
-//   2. tg_q1_view          — загрузка экрана 1
-//   3. tg_q1_answer        — ответ на вопрос 1
-//   4. tg_q2_answer        — ответ на вопрос 2
-//   5. tg_paywall_view     — показ пейволла
-//   6. tg_pay_click        — клик по кнопке оплаты
-//   7. tg_payment_form_open— открытие формы оплаты (пока мок)
-//   8. tg_payment_success  — успешная оплата (пока мок)
-//   9–10 (вход в приложение, первая генерация) — на стороне app.
-//  Плюс перехват: tg_intercept_view / tg_intercept_stay /
-//  tg_intercept_tg_link, и tg_quiz_skipped при возврате с
-//  сохранёнными ответами.
+//  События флоу v2 (вау → пейволл → оплата):
+//   1. клик по ссылке из поста — на стороне бота/канала, не здесь
+//   2. tg_wow_view          — загрузка вау-экрана до/после
+//   3. tg_wow_cta_click     — клик «Хочу так же» (placement)
+//   4. tg_paywall_view      — показ пейволла
+//   5. tg_pay_click         — клик по кнопке оплаты (placement)
+//   6. tg_payment_form_open — открытие формы оплаты (пока мок)
+//   7. tg_payment_success   — успешная оплата (пока мок)
+//   7а tg_payment_failed    — отказ (TODO(backend), из колбэка)
+//   8. tg_success_view / tg_app_redirect — успех и уход в app.
+//  Плюс: tg_intercept_view / stay / tg_link (перехват ухода),
+//  tg_return_visit (повторный заход → сразу пейволл),
+//  tg_timer_expired (сгорел личный таймер промокода).
 // ═════════════════════════════════════════════════════════════
 
 import posthog from "posthog-js";
-import type { Pain, Scenario, Step } from "./funnel/types";
+import type { Scenario, Step } from "./funnel/types";
 import { STEP_INDEX } from "./funnel/types";
 
 let inited = false;
@@ -86,7 +86,6 @@ export function initAnalytics(): void {
 
 interface Ctx {
   scenario?: Scenario | null;
-  pain?: Pain | null;
   [k: string]: unknown;
 }
 
@@ -99,21 +98,12 @@ function capture(event: string, props: Ctx = {}): void {
 }
 
 /**
- * Ответы квиза → super properties: scenario/pain поедут со всеми
+ * Сценарий из ссылки поста → super property: поедет со всеми
  * последующими событиями, включая $autocapture («куда тыкают»).
- * При сбросе ответа зовём с null — метка снимается.
  */
-export function registerAnswers(props: {
-  scenario?: Scenario | null;
-  pain?: Pain | null;
-}): void {
+export function registerScenario(scenario: Scenario | null): void {
   if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) return;
-  const set: Record<string, string> = {};
-  for (const [k, v] of Object.entries(props)) {
-    if (v) set[k] = v;
-    else if (v === null) posthog.unregister(k);
-  }
-  if (Object.keys(set).length) posthog.register(set);
+  if (scenario) posthog.register({ scenario });
 }
 
 /** One-shot: view экранов шлём один раз за сессию. */
@@ -127,19 +117,17 @@ export function trackStepView(step: Step, ctx: Ctx): void {
   captureOnce(`tg_${step}_view`, { ...ctx, step_index: STEP_INDEX[step] });
 }
 
-export function trackQ1Answer(scenario: Scenario): void {
-  capture("tg_q1_answer", { scenario, step_index: STEP_INDEX.q1 });
+export function trackWowCta(ctx: Ctx & { placement: "top" | "bottom" }): void {
+  capture("tg_wow_cta_click", { ...ctx, step_index: STEP_INDEX.wow });
 }
 
-export function trackQ2Answer(scenario: Scenario, pain: Pain): void {
-  capture("tg_q2_answer", { scenario, pain, step_index: STEP_INDEX.q2 });
+export function trackReturnVisit(ctx: Ctx): void {
+  captureOnce("tg_return_visit", ctx);
 }
 
-export function trackQuizSkipped(ctx: Ctx): void {
-  captureOnce("tg_quiz_skipped", ctx);
-}
-
-export function trackPayClick(ctx: Ctx & { placement: "top" | "bottom" | "intercept" }): void {
+export function trackPayClick(
+  ctx: Ctx & { placement: "top" | "bottom" | "intercept" }
+): void {
   capture("tg_pay_click", ctx);
 }
 
@@ -154,6 +142,10 @@ export function trackPaymentSuccess(ctx: Ctx): void {
 /** TODO(backend): звать из колбэка платёжки при отказе/ошибке. */
 export function trackPaymentFailed(ctx: Ctx & { reason?: string }): void {
   capture("tg_payment_failed", ctx);
+}
+
+export function trackTimerExpired(ctx: Ctx): void {
+  captureOnce("tg_timer_expired", ctx);
 }
 
 export function trackIntercept(

@@ -1,23 +1,25 @@
 // ═════════════════════════════════════════════════════════════
-//  Контент воронки — копирайт финальный, из хендоффа.
+//  Контент воронки v2: вау до/после → пейволл с таймером.
 //
 //  Картинки сгенерированы в Higgsfield (примеры, продакшн заменит
 //  своими — см. README хендоффа). Лежат локально в /public/img,
-//  ужаты под фактические слоты (retina ×2): q1-превью ≤480px,
-//  до/после ≤600px, JPEG. Оригиналы с CDN весили по ~6 МБ.
+//  ужаты под фактические слоты (retina ×2), JPEG. Оригиналы с CDN
+//  весили по ~6 МБ.
 //
-//  ВАЖНО: счётчики соцдоказательств (counter) — из хендоффа,
-//  «числа брать из реальной статистики». TODO(data): подставить
-//  реальные цифры перед запуском рекламы.
+//  ВАЖНО: счётчики соцдоказательств (counter) — числа брать из
+//  реальной статистики. TODO(data): подставить перед рекламой.
 // ═════════════════════════════════════════════════════════════
 
-import type { Pain, Scenario } from "./types";
+import type { Scenario } from "./types";
 
 export const PRICES = {
   trial: 49, // 3 дня полного доступа, р.
   weekly: 599, // автопродление, р. в неделю
   interceptPromo: 39, // скидка ТОЛЬКО на экране перехвата (А/Б-тест)
 };
+
+/** Сколько минут держим цену по промокоду из поста (личный таймер). */
+export const PROMO_MINUTES = 15;
 
 export interface Review {
   text: string;
@@ -26,22 +28,20 @@ export interface Review {
 
 export interface ScenarioData {
   label: string; // подпись сценария («{label}» в копирайте)
-  q1Label: string; // текст карточки на экране 1
-  q2Title: string; // H1 экрана 2
+  wowHeadline: string; // H1 вау-экрана
   headline: string; // хедлайн пейволла
   counter: string; // счётчик соцдоказательства
   beforeAlt: string;
   afterAlt: string;
   reviews: Review[];
-  img: { q1: string; before: string; after: string };
+  img: { before: string; after: string };
 }
 
 export const SCENARIO_DATA: Record<Scenario, ScenarioData> = {
   dating: {
     label: "Знакомства",
-    q1Label: "Знакомства и дейтинг",
-    q2Title: "Что сейчас не так с вашими фото в анкете?",
-    headline: "Ваш план: фото, на которое свайпают вправо",
+    wowHeadline: "Из обычного селфи — фото, на которое свайпают вправо",
+    headline: "Фото, на которое свайпают вправо — за 49 р.",
     counter: "За неделю 1 240 фото сделано для знакомств",
     beforeAlt: "обычное селфи дома",
     afterAlt: "кухня, неон, вечерний свет",
@@ -60,16 +60,14 @@ export const SCENARIO_DATA: Record<Scenario, ScenarioData> = {
       },
     ],
     img: {
-      q1: "/img/dating-q1.jpg",
       before: "/img/dating-before.jpg",
       after: "/img/dating-after.jpg",
     },
   },
   social: {
     label: "Соцсети",
-    q1Label: "Соцсети и сторис",
-    q2Title: "Что мешает выкладывать фото чаще?",
-    headline: "Ваш план: фото, которые не стыдно выложить",
+    wowHeadline: "Из фото «как есть» — кадр, который не стыдно выложить",
+    headline: "Фото для ленты и сторис — за 49 р.",
     counter: "За неделю 2 300 фото сделано для сторис",
     beforeAlt: "фото из галереи как есть",
     afterAlt: "стиль под ленту, свет, цвет",
@@ -82,16 +80,14 @@ export const SCENARIO_DATA: Record<Scenario, ScenarioData> = {
       { text: "Друзья спрашивают, где снималась. Нигде :)", who: "Оля" },
     ],
     img: {
-      q1: "/img/social-q1.jpg",
       before: "/img/social-before.jpg",
       after: "/img/social-after.jpg",
     },
   },
   work: {
     label: "Работа",
-    q1Label: "Работа, резюме, LinkedIn",
-    q2Title: "Что не так с вашей текущей аватаркой?",
-    headline: "Ваш план: аватарка, после которой HR отвечает",
+    wowHeadline: "Из селфи в машине — аватарка, после которой HR отвечает",
+    headline: "Деловой портрет без студии — за 49 р.",
     counter: "За неделю 860 деловых портретов",
     beforeAlt: "селфи в машине",
     afterAlt: "деловой портрет, студийный свет",
@@ -107,16 +103,14 @@ export const SCENARIO_DATA: Record<Scenario, ScenarioData> = {
       { text: "Поставил на резюме и в почту. Солидно.", who: "Игорь" },
     ],
     img: {
-      q1: "/img/work-q1.jpg",
       before: "/img/work-before.jpg",
       after: "/img/work-after.jpg",
     },
   },
   self: {
     label: "Для себя",
-    q1Label: "Просто хочу красивые фото себя",
-    q2Title: "Что вам не нравится в своих фото?",
-    headline: "Ваш план: фото, где вы себе нравитесь",
+    wowHeadline: "Из случайного кадра — фото, где вы себе нравитесь",
+    headline: "Фото, где вы себе нравитесь — за 49 р.",
     counter: "За неделю 1 900 фото «для себя»",
     beforeAlt: "случайный кадр",
     afterAlt: "свет и ракурс, которые вам идут",
@@ -132,33 +126,17 @@ export const SCENARIO_DATA: Record<Scenario, ScenarioData> = {
       },
     ],
     img: {
-      q1: "/img/self-q1.jpg",
       before: "/img/self-before.jpg",
       after: "/img/self-after.jpg",
     },
   },
 };
 
-export const Q2_OPTIONS: { key: Pain; label: string }[] = [
-  { key: "p1", label: "Нет ни одного нормального фото" },
-  { key: "p2", label: "Фото есть, но я себе на них не нравлюсь" },
-  { key: "p3", label: "Нет времени и денег на фотографа" },
-  { key: "p4", label: "Не умею обрабатывать, получается хуже чем было" },
-];
-
-export function loaderChecks(scenario: Scenario): string[] {
-  return [
-    `Подбираем эффекты под сценарий «${SCENARIO_DATA[scenario].label}»`,
-    "Настраиваем свет и цветокоррекцию",
-    "Готовим 5 стилей под вас",
-  ];
-}
-
 export function offerItems(scenario: Scenario): string[] {
   return [
     "все эффекты и стили без ограничений",
     "обработка и ретушь ваших фото",
-    `5 эффектов, подобранных под сценарий «${SCENARIO_DATA[scenario].label}»`,
+    `5 эффектов под сценарий «${SCENARIO_DATA[scenario].label}»`,
     "скачивание без водяных знаков",
   ];
 }

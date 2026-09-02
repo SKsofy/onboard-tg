@@ -1,30 +1,35 @@
 "use client";
 
+// Экран 2 — оффер + таймер + оплата. Давим на ограниченность:
+// личный таймер промокода сверху и у кнопки, «цена сохранена»
+// для вернувшихся. Дисклеймер автопродления НЕ прятать.
+
 import Faq from "./Faq";
+import PromoTimer from "./PromoTimer";
 import { offerItems, PRICES, SCENARIO_DATA } from "@/lib/funnel/data";
 import type { Scenario } from "@/lib/funnel/types";
-
-// Опциональный таймер — включать ТОЛЬКО при реальном ограничении
-// промокода (иначе это фейк-дефицит, см. хендофф).
-const SHOW_TIMER = false;
 
 export default function Paywall({
   scenario,
   saved,
   paying,
+  deadline,
   onBack,
   onPay,
+  onTimerExpired,
 }: {
   scenario: Scenario;
   saved: boolean;
   paying: boolean;
+  deadline: number;
   onBack: () => void;
   onPay: (placement: "top" | "bottom") => void;
+  onTimerExpired: () => void;
 }) {
   const d = SCENARIO_DATA[scenario];
   const ctaLabel = paying
     ? "Открываем оплату…"
-    : `Получить доступ за ${PRICES.trial} р.`;
+    : `Забрать за ${PRICES.trial} р.`;
 
   return (
     <div className="screen paywall">
@@ -32,19 +37,15 @@ export default function Paywall({
         <button className="back-btn" onClick={onBack} aria-label="Назад">
           ←
         </button>
-        {saved && <div className="saved-pill">Ваш план сохранён</div>}
+        {saved && <div className="saved-pill">Цена сохранена для вас</div>}
       </div>
 
-      {SHOW_TIMER && (
-        <div className="timer-strip">
-          Промокод из поста действует до среды · осталось 1 д 14 ч
-        </div>
-      )}
+      <PromoTimer deadline={deadline} onExpired={onTimerExpired} />
 
       <h1 className="paywall__headline">{d.headline}</h1>
       <p className="paywall__sub">
-        Подобрали 5 эффектов под ваш запрос. Первый результат через минуту
-        после загрузки фото — без фотографа и обработки.
+        3 дня полного доступа вместо {PRICES.weekly} р. в неделю. Первый
+        результат через минуту после загрузки фото.
       </p>
 
       <div className="ba-grid">

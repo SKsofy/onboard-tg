@@ -1,42 +1,47 @@
 "use client";
 
 // ═════════════════════════════════════════════════════════════
-//  Состояние воронки: шаг, ответы, перехват, мок-оплата.
+//  Состояние воронки v2: вау → пейволл (таймер) → оплата → успех.
 //
 //  Инварианты (грабли из прошлых воронок, см. README):
 //   · никаких побочных эффектов внутри setState-апдейтеров
 //     (StrictMode вызывает их дважды);
 //   · защита от двойного тапа — ТОЛЬКО ref-гарды, не state;
-//   · флаг «состояние восстановлено» живёт в state.
+//   · pushState расширяет history.state и передаёт URL явно —
+//     иначе Next App Router теряет стейт и query-параметры.
 //
-//  Персистентность: scenario/pain в URL (?scenario=&pain=) и
-//  localStorage (vf_scenario / vf_pain). Повторный заход с
-//  сохранёнными ответами → сразу пейволл + плашка «сохранён».
+//  Сценарий приходит из ссылки поста (?scenario=), сохраняется в
+//  localStorage. Повторный заход того, кто уже дошёл до пейволла, —
+//  сразу пейволл + плашка «цена сохранена».
+//
+//  Таймер промокода: личный дедлайн (now + PROMO_MINUTES) пишется
+//  в localStorage при первом показе пейволла и переживает
+//  перезагрузку — это честный персональный резерв цены, а не
+//  фейковый сброс на каждый заход.
 // ═════════════════════════════════════════════════════════════
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   initAnalytics,
-  registerAnswers,
+  registerScenario,
   trackAppRedirect,
   trackIntercept,
   trackPayClick,
   trackPaymentFormOpen,
   trackPaymentSuccess,
-  trackQ1Answer,
-  trackQ2Answer,
-  trackQuizSkipped,
+  trackReturnVisit,
   trackStepView,
+  trackTimerExpired,
+  trackWowCta,
 } from "../analytics";
-import { appUrl, SCENARIO_DATA } from "./data";
-import type { Pain, Scenario, Step } from "./types";
-import { isPain, isScenario } from "./types";
+import { appUrl, PROMO_MINUTES } from "./data";
+import type { Scenario, Step } from "./types";
+import { isScenario } from "./types";
 
 const LS_SCENARIO = "vf_scenario";
-const LS_PAIN = "vf_pain";
+const LS_PAYWALL_SEEN = "vf_paywall_seen";
+const LS_DEADLINE = "vf_deal_until"; // личный дедлайн промокода, ms epoch
 
-const LOADER_STEP_MS = 600; // шаг появления чекпоинтов
-const LOADER_TOTAL_MS = 2400; // автопереход на пейволл (< 3 с по ТЗ)
 const MOCK_PAY_MS = 700; // имитация платёжной формы
 
 function lsGet(key: string): string | null {
@@ -52,7 +57,7 @@ function lsSet(key: string, value: string): void {
   } catch {}
 }
 
-/** Дописываем ответ в URL, не трогая utm и не создавая навигацию. */
+/** Дописываем сценарий в URL, не трогая utm и не создавая навигацию. */
 function urlSet(key: string, value: string): void {
   try {
     const url = new URL(window.location.href);
@@ -63,31 +68,29 @@ function urlSet(key: string, value: string): void {
 
 export interface FunnelState {
   step: Step;
-  scenario: Scenario | null;
-  pain: Pain | null;
-  /** Ответы восстановлены из прошлого визита → плашка «план сохранён». */
+  scenario: Scenario;
+  /** Пользователь уже был на пейволле → плашка «цена сохранена». */
   saved: boolean;
   intercept: boolean;
-  loaderN: number; // сколько чекпоинтов лоадера уже показано (0–3)
   paying: boolean;
+  /** Личный дедлайн промокода (ms epoch); 0 — ещё не назначен. */
+  deadline: number;
 }
 
 export function useFunnel() {
   const [s, setS] = useState<FunnelState>({
-    step: "q1",
-    scenario: null,
-    pain: null,
+    step: "wow",
+    scenario: "dating",
     saved: false,
     intercept: false,
-    loaderN: 0,
     paying: false,
+    deadline: 0,
   });
 
   const payingRef = useRef(false); // ref-гард от двойного тапа по оплате
-  const pickGuard = useRef(false); // ref-гард от двойного тапа по карточкам
   const restoredRef = useRef(false); // init-эффект должен отработать один раз
 
-  // ── Инициализация: аналитика + восстановление ответов ──
+  // ── Инициализация: аналитика + сценарий из ссылки + возврат ──
   useEffect(() => {
     if (restoredRef.current) return;
     restoredRef.current = true;
@@ -95,73 +98,58 @@ export function useFunnel() {
 
     const q = new URLSearchParams(window.location.search);
     const urlScenario = q.get("scenario");
-    const urlPain = q.get("pain");
-    const scenario = isScenario(urlScenario)
+    const stored = lsGet(LS_SCENARIO);
+    const scenario: Scenario = isScenario(urlScenario)
       ? urlScenario
-      : isScenario(lsGet(LS_SCENARIO))
-        ? (lsGet(LS_SCENARIO) as Scenario)
-        : null;
-    const pain = isPain(urlPain)
-      ? urlPain
-      : isPain(lsGet(LS_PAIN))
-        ? (lsGet(LS_PAIN) as Pain)
-        : null;
+      : isScenario(stored)
+        ? stored
+        : "dating";
+    lsSet(LS_SCENARIO, scenario);
+    registerScenario(scenario);
+
+    const deadline = Number(lsGet(LS_DEADLINE)) || 0;
 
     // Дев-хелпер: ?step=<name> открывает экран напрямую.
     const devStep = q.get("step") as Step | null;
     if (
       process.env.NODE_ENV !== "production" &&
       devStep &&
-      ["q1", "q2", "loader", "paywall", "success"].includes(devStep)
+      ["wow", "paywall", "success"].includes(devStep)
     ) {
-      setS((p) => ({ ...p, step: devStep, scenario, pain }));
+      setS((p) => ({ ...p, step: devStep, scenario, deadline }));
       return;
     }
 
-    registerAnswers({ scenario, pain });
-    if (scenario && pain) {
-      // Повторный заход: квиз пропускаем, сразу пейволл.
-      setS((p) => ({ ...p, scenario, pain, step: "paywall", saved: true }));
-      trackQuizSkipped({ scenario, pain });
-    } else if (scenario) {
-      setS((p) => ({ ...p, scenario, step: "q2" }));
+    if (lsGet(LS_PAYWALL_SEEN) === "1") {
+      // Повторный заход: вау уже видел — сразу на пейволл.
+      setS((p) => ({ ...p, scenario, step: "paywall", saved: true, deadline }));
+      trackReturnVisit({ scenario });
+    } else {
+      setS((p) => ({ ...p, scenario, deadline }));
     }
   }, []);
 
   // ── View-события при смене шага ──
   useEffect(() => {
-    trackStepView(s.step, { scenario: s.scenario, pain: s.pain });
-  }, [s.step, s.scenario, s.pain]);
+    trackStepView(s.step, { scenario: s.scenario });
+  }, [s.step, s.scenario]);
 
-  // ── Лоадер: чекпоинты каждые 600 мс, автопереход через 2.4 с ──
+  // ── Пейволл: назначаем личный дедлайн промокода при первом показе ──
   useEffect(() => {
-    if (s.step !== "loader") return;
-    const timers = [1, 2, 3].map((n) =>
-      setTimeout(
-        () => setS((p) => ({ ...p, loaderN: n })),
-        n * LOADER_STEP_MS
-      )
-    );
-    timers.push(
-      setTimeout(() => {
-        pickGuard.current = false;
-        setS((p) => ({ ...p, step: "paywall" }));
-      }, LOADER_TOTAL_MS)
-    );
-    return () => timers.forEach(clearTimeout);
-  }, [s.step]);
+    if (s.step !== "paywall") return;
+    lsSet(LS_PAYWALL_SEEN, "1");
+    if (!s.deadline) {
+      const d = Date.now() + PROMO_MINUTES * 60_000;
+      lsSet(LS_DEADLINE, String(d));
+      setS((p) => (p.deadline ? p : { ...p, deadline: d }));
+    }
+  }, [s.step, s.deadline]);
 
   // ── Перехват ухода: кнопка «назад» браузера на пейволле ──
-  // На входе в пейволл кладём state в историю; back → popstate →
-  // показываем bottom sheet и возвращаем state, чтобы ловить и
-  // следующий back. beforeunload во встроенном браузере TG не даёт
-  // кастомного UI — ограничиваемся историей (как в ТЗ, best-effort).
   const stepRef = useRef(s.step);
   stepRef.current = s.step;
   useEffect(() => {
     if (s.step !== "paywall") return;
-    // URL передаём явно (текущий href), state расширяем, а не заменяем —
-    // иначе Next App Router теряет свой стейт истории и query-параметры.
     const push = () =>
       window.history.pushState(
         { ...window.history.state, vfPaywall: true },
@@ -184,62 +172,43 @@ export function useFunnel() {
 
   // ── Действия ──
 
-  const pickScenario = useCallback((key: Scenario) => {
-    if (pickGuard.current) return;
-    pickGuard.current = true;
-    lsSet(LS_SCENARIO, key);
-    urlSet("scenario", key);
-    registerAnswers({ scenario: key });
-    // Греем «до/после» выбранного сценария: пока пользователь на
-    // втором вопросе и лоадере (~3+ с), пейволл получит фото из кэша.
-    for (const src of [SCENARIO_DATA[key].img.before, SCENARIO_DATA[key].img.after]) {
-      const im = new Image();
-      im.src = src;
-    }
-    trackQ1Answer(key);
-    setS((p) => ({ ...p, scenario: key, step: "q2", saved: false }));
-    // Разрешаем следующий тап после смены экрана.
-    setTimeout(() => (pickGuard.current = false), 300);
-  }, []);
-
-  const pickPain = useCallback(
-    (key: Pain) => {
-      if (pickGuard.current) return;
-      pickGuard.current = true;
-      lsSet(LS_PAIN, key);
-      urlSet("pain", key);
-      registerAnswers({ pain: key });
-      trackQ2Answer(s.scenario ?? "dating", key);
-      setS((p) => ({ ...p, pain: key, step: "loader", loaderN: 0 }));
-      // pickGuard снимет переход loader → paywall
+  const goToPaywall = useCallback(
+    (placement: "top" | "bottom") => {
+      trackWowCta({ scenario: s.scenario, placement });
+      setS((p) => ({ ...p, step: "paywall" }));
     },
     [s.scenario]
   );
 
   const openIntercept = useCallback(() => {
-    trackIntercept("view", { scenario: s.scenario, pain: s.pain });
+    trackIntercept("view", { scenario: s.scenario });
     setS((p) => ({ ...p, intercept: true }));
-  }, [s.scenario, s.pain]);
+  }, [s.scenario]);
 
   const closeIntercept = useCallback(
     (reason: "stay" | "tg_link") => {
-      trackIntercept(reason, { scenario: s.scenario, pain: s.pain });
+      trackIntercept(reason, { scenario: s.scenario });
       setS((p) => ({ ...p, intercept: false }));
     },
-    [s.scenario, s.pain]
+    [s.scenario]
   );
+
+  const onTimerExpired = useCallback(() => {
+    trackTimerExpired({ scenario: s.scenario });
+  }, [s.scenario]);
 
   const pay = useCallback(
     (placement: "top" | "bottom" | "intercept") => {
       if (payingRef.current) return;
       payingRef.current = true;
-      const ctx = { scenario: s.scenario, pain: s.pain };
+      const ctx = { scenario: s.scenario };
       trackPayClick({ ...ctx, placement });
       setS((p) => ({ ...p, paying: true, intercept: false }));
 
       // TODO(backend): здесь открывается реальная платёжная форма
       // (виджет провайдера) с автопродлением. После success-колбэка —
-      // автоактивация доступа на бэке и переход на экран успеха.
+      // автоактивация доступа на бэке и переход на экран успеха;
+      // при отказе — trackPaymentFailed({reason}) и остаёмся тут.
       // Пока — мок: форма «открылась» и «оплатилась» сама.
       trackPaymentFormOpen(ctx);
       setTimeout(() => {
@@ -248,21 +217,20 @@ export function useFunnel() {
         setS((p) => ({ ...p, paying: false, step: "success" }));
       }, MOCK_PAY_MS);
     },
-    [s.scenario, s.pain]
+    [s.scenario]
   );
 
   const goToApp = useCallback(() => {
-    const scenario = s.scenario ?? "self";
-    trackAppRedirect({ scenario, pain: s.pain });
-    window.location.href = appUrl(scenario);
-  }, [s.scenario, s.pain]);
+    trackAppRedirect({ scenario: s.scenario });
+    window.location.href = appUrl(s.scenario);
+  }, [s.scenario]);
 
   return {
     ...s,
-    pickScenario,
-    pickPain,
+    goToPaywall,
     openIntercept,
     closeIntercept,
+    onTimerExpired,
     pay,
     goToApp,
   };

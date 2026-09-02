@@ -1,32 +1,27 @@
 // ═════════════════════════════════════════════════════════════
-//  Типы воронки «volshebny.by/start» (Telegram-канал → пейволл).
+//  Типы воронки «volshebny.by/start» (бот/канал ТГ → пейволл).
+//
+//  Флоу v2 (правка заказчика 02.09.2026): без квиза.
+//  Вау до/после → пейволл с таймером → оплата → успех.
+//  Сценарий приходит из ссылки поста (?scenario=), не из квиза.
 // ═════════════════════════════════════════════════════════════
 
 export type Scenario = "dating" | "social" | "work" | "self";
-export type Pain = "p1" | "p2" | "p3" | "p4";
 
 export type Step =
-  | "q1" // Экран 1 — сегментация (вопрос 1)
-  | "q2" // Экран 2 — боль (вопрос 2)
-  | "loader" // «Собираем ваш план», 2.4 с
-  | "paywall" // Пейволл (персонализация по scenario)
-  | "success"; // Экран успеха после оплаты
+  | "wow" // Экран 1 — вау-эффект до/после
+  | "paywall" // Экран 2 — оффер + таймер + оплата
+  | "success"; // Экран 3 — успех
 
 // Порядок шагов для аналитики (step_index в событиях).
 export const STEP_INDEX: Record<Step, number> = {
-  q1: 1,
-  q2: 2,
-  loader: 3,
-  paywall: 4,
-  success: 5,
+  wow: 1,
+  paywall: 2,
+  success: 3,
 };
 
 export const SCENARIOS: Scenario[] = ["dating", "social", "work", "self"];
-export const PAINS: Pain[] = ["p1", "p2", "p3", "p4"];
 
 export function isScenario(v: string | null): v is Scenario {
   return v !== null && (SCENARIOS as string[]).includes(v);
-}
-export function isPain(v: string | null): v is Pain {
-  return v !== null && (PAINS as string[]).includes(v);
 }
