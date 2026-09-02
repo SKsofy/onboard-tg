@@ -7,6 +7,11 @@
 //  по умолчанию https://us.i.posthog.com). Без ключа — все вызовы
 //  no-op: локальная разработка не падает и не мусорит в проде.
 //
+//  Имя воронки: funnel = "tg_bot" («Из бота ТГ») — super property,
+//  едет со ВСЕМИ событиями, включая $autocapture. Ответы квиза
+//  (scenario, pain) тоже регистрируются super properties — так
+//  autocapture-клики и pageview сегментируются по ним без джойнов.
+//
 //  События по шагам ТЗ (все едут с scenario, pain, utm_*):
 //   1. клик по ссылке из поста — на стороне канала, не здесь
 //   2. tg_q1_view          — загрузка экрана 1
@@ -72,7 +77,7 @@ export function initAnalytics(): void {
 
   // Super properties: воронка + utm со всеми событиями.
   const touch = urlProps();
-  posthog.register({ funnel: "tg-channel", ...touch });
+  posthog.register({ funnel: "tg_bot", ...touch });
   // Метки, которых нет в этом заходе, снимаем — иначе переживут кампанию.
   for (const k of TOUCH_KEYS) {
     if (!touch[k]) posthog.unregister(k);
@@ -91,6 +96,24 @@ function capture(event: string, props: Ctx = {}): void {
     ...props,
     time_since_start_ms: sessionStart ? Date.now() - sessionStart : undefined,
   });
+}
+
+/**
+ * Ответы квиза → super properties: scenario/pain поедут со всеми
+ * последующими событиями, включая $autocapture («куда тыкают»).
+ * При сбросе ответа зовём с null — метка снимается.
+ */
+export function registerAnswers(props: {
+  scenario?: Scenario | null;
+  pain?: Pain | null;
+}): void {
+  if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) return;
+  const set: Record<string, string> = {};
+  for (const [k, v] of Object.entries(props)) {
+    if (v) set[k] = v;
+    else if (v === null) posthog.unregister(k);
+  }
+  if (Object.keys(set).length) posthog.register(set);
 }
 
 /** One-shot: view экранов шлём один раз за сессию. */
@@ -126,6 +149,11 @@ export function trackPaymentFormOpen(ctx: Ctx): void {
 
 export function trackPaymentSuccess(ctx: Ctx): void {
   capture("tg_payment_success", ctx);
+}
+
+/** TODO(backend): звать из колбэка платёжки при отказе/ошибке. */
+export function trackPaymentFailed(ctx: Ctx & { reason?: string }): void {
+  capture("tg_payment_failed", ctx);
 }
 
 export function trackIntercept(

@@ -17,6 +17,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   initAnalytics,
+  registerAnswers,
   trackAppRedirect,
   trackIntercept,
   trackPayClick,
@@ -117,6 +118,7 @@ export function useFunnel() {
       return;
     }
 
+    registerAnswers({ scenario, pain });
     if (scenario && pain) {
       // Повторный заход: квиз пропускаем, сразу пейволл.
       setS((p) => ({ ...p, scenario, pain, step: "paywall", saved: true }));
@@ -187,6 +189,7 @@ export function useFunnel() {
     pickGuard.current = true;
     lsSet(LS_SCENARIO, key);
     urlSet("scenario", key);
+    registerAnswers({ scenario: key });
     // Греем «до/после» выбранного сценария: пока пользователь на
     // втором вопросе и лоадере (~3+ с), пейволл получит фото из кэша.
     for (const src of [SCENARIO_DATA[key].img.before, SCENARIO_DATA[key].img.after]) {
@@ -205,6 +208,7 @@ export function useFunnel() {
       pickGuard.current = true;
       lsSet(LS_PAIN, key);
       urlSet("pain", key);
+      registerAnswers({ pain: key });
       trackQ2Answer(s.scenario ?? "dating", key);
       setS((p) => ({ ...p, pain: key, step: "loader", loaderN: 0 }));
       // pickGuard снимет переход loader → paywall
