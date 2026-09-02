@@ -1,0 +1,562 @@
+/* ═════════════════════════════════════════════════════════════
+   Дизайн-токены из хендоффа (система Magically/Волшебный).
+   ═════════════════════════════════════════════════════════════ */
+
+:root {
+  --bg: #141218;
+  --surface: #1e1b25;
+  --surface-2: #2a2733;
+  --border: #332f3e;
+  --text: #eceaf1;
+  --text-body: #d5d0df;
+  --text-secondary: #9b93a8;
+  --text-muted: #767083;
+  --text-muted-2: #8b8496;
+  --text-faint: #5b5568;
+  --accent: #8a2bdf;
+  --accent-hover: #7a22c9;
+  --accent-soft: #c9a4f5;
+  --accent-softer: #d9c6f5;
+  --lime: #c9ff4d;
+  --on-lime: #141218;
+
+  --r-card: 16px;
+  --r-card-sm: 14px;
+  --r-btn: 14px;
+  --r-pill: 99px;
+  --r-sheet: 24px;
+
+  --cta-h: 54px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  /* Пейволл скроллится, фон не должен «просвечивать» другим цветом. */
+  background: var(--bg);
+}
+
+body {
+  font-family:
+    "Geist",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    system-ui,
+    sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100dvh;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* ── Общая рамка экрана ── */
+.screen {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: 22px 18px;
+}
+
+/* ── Прогресс квиза ── */
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+.progress__bar {
+  flex: 1;
+  height: 4px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+}
+.progress__bar--on {
+  background: var(--accent);
+}
+.progress__label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.h1 {
+  font-size: 26px;
+  font-weight: 750;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.sub {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* ── Экран 1: грид 2×2 ── */
+.q1-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.q1-card {
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  background: var(--surface);
+  overflow: hidden;
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  color: var(--text);
+  transition: border-color 0.15s;
+  padding: 0;
+}
+.q1-card:hover,
+.q1-card:active {
+  border-color: var(--accent);
+}
+.q1-card__img {
+  height: 88px;
+  background-size: cover;
+  background-position: center;
+  background-color: #211e29;
+}
+.q1-card__label {
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+/* ── Экран 2: варианты столбцом ── */
+.q2-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.q2-card {
+  border: 1px solid var(--border);
+  border-radius: var(--r-card-sm);
+  background: var(--surface);
+  padding: 16px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text);
+  text-align: left;
+  transition: border-color 0.15s;
+  min-height: 44px;
+}
+.q2-card:hover,
+.q2-card:active {
+  border-color: var(--accent);
+}
+
+.footnote {
+  margin-top: auto;
+  padding-top: 18px;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* ── Лоадер ── */
+.loader {
+  justify-content: center;
+  padding-left: 26px;
+  padding-right: 26px;
+}
+.loader__title {
+  font-size: 24px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  margin-bottom: 26px;
+  text-align: center;
+}
+.loader__checks {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 34px;
+}
+.loader__check {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 0.25;
+  transition: opacity 0.4s;
+}
+.loader__check--on {
+  opacity: 1;
+}
+.loader__dot {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  color: var(--on-lime);
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  transition: background 0.4s;
+}
+.loader__check--on .loader__dot {
+  background: var(--lime);
+}
+.loader__text {
+  font-size: 14.5px;
+  line-height: 1.4;
+  color: var(--text-body);
+}
+.loader__track {
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.loader__fill {
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: linear-gradient(90deg, var(--accent), var(--lime));
+  transition: width 0.5s;
+}
+
+/* ── CTA ── */
+.cta {
+  width: 100%;
+  height: var(--cta-h);
+  border: none;
+  border-radius: var(--r-btn);
+  background: var(--accent);
+  color: #fff;
+  font-size: 16.5px;
+  font-weight: 700;
+  transition: background 0.15s;
+}
+.cta:hover {
+  background: var(--accent-hover);
+}
+
+/* ── Пейволл ── */
+.paywall {
+  padding: 16px 18px 28px;
+}
+.paywall__topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.back-btn {
+  width: 34px;
+  height: 34px;
+  min-width: 44px; /* хит-таргет ≥44 за счёт прозрачной зоны */
+  min-height: 44px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 15px;
+}
+.saved-pill {
+  font-size: 11.5px;
+  font-weight: 700;
+  background: var(--lime);
+  color: var(--on-lime);
+  padding: 5px 11px;
+  border-radius: var(--r-pill);
+}
+.timer-strip {
+  margin-bottom: 12px;
+  padding: 9px 12px;
+  border-radius: 11px;
+  background: #2a1b3d;
+  border: 1px solid #8a2bdf55;
+  font-size: 12.5px;
+  color: var(--accent-softer);
+  text-align: center;
+}
+.paywall__headline {
+  font-size: 25px;
+  font-weight: 750;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+.paywall__sub {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+
+.ba-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.ba-cell {
+  position: relative;
+  height: 150px;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: var(--r-card-sm);
+}
+.ba-cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.ba-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  font-size: 10.5px;
+  font-weight: 750;
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+  pointer-events: none;
+}
+.ba-badge--before {
+  background: #141218cc;
+  color: #cfc9db;
+}
+.ba-badge--after {
+  background: var(--lime);
+  color: var(--on-lime);
+}
+
+.offer {
+  border: 1.5px solid var(--accent);
+  border-radius: var(--r-card);
+  background: var(--surface);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.offer__price {
+  font-size: 22px;
+  font-weight: 800;
+}
+.offer__old {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin: 3px 0 12px;
+}
+.offer__list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.offer__item {
+  display: flex;
+  gap: 9px;
+  font-size: 13.5px;
+  color: var(--text-body);
+  line-height: 1.4;
+}
+.offer__check {
+  color: var(--lime);
+  font-weight: 800;
+}
+
+.legal {
+  font-size: 11.5px;
+  color: var(--text-muted-2);
+  line-height: 1.5;
+  text-align: center;
+  margin: 10px 0 22px;
+}
+
+.reviews {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.review {
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--surface);
+  padding: 12px 14px;
+}
+.review__text {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-body);
+  margin-bottom: 5px;
+}
+.review__who {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+.counter {
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--accent-soft);
+  font-weight: 650;
+  margin-bottom: 20px;
+}
+
+/* ── Аккордеон ── */
+.faq {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+.faq__item {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.faq__q {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 13.5px;
+  font-weight: 650;
+  background: none;
+  border: none;
+  color: var(--text);
+  text-align: left;
+  min-height: 44px;
+}
+.faq__chev {
+  color: var(--text-muted);
+}
+.faq__a {
+  padding: 0 14px 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+/* ── Экран перехвата (bottom sheet) ── */
+.intercept-overlay {
+  position: fixed;
+  inset: 0;
+  background: #141218e6;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 5;
+}
+.intercept-sheet {
+  width: 100%;
+  max-width: 480px;
+  background: var(--surface);
+  border-top: 1px solid #3c3847;
+  border-radius: var(--r-sheet) var(--r-sheet) 0 0;
+  padding: 24px 20px 26px;
+  animation: sheet-up 0.25s ease-out;
+}
+@keyframes sheet-up {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.intercept-sheet__title {
+  font-size: 22px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+.intercept-sheet__text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin-bottom: 18px;
+}
+.intercept-sheet__primary {
+  width: 100%;
+  height: 52px;
+  border: none;
+  border-radius: var(--r-btn);
+  background: var(--accent);
+  color: #fff;
+  font-size: 15.5px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  transition: background 0.15s;
+}
+.intercept-sheet__primary:hover {
+  background: var(--accent-hover);
+}
+.intercept-sheet__secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 48px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-btn);
+  background: transparent;
+  color: var(--text-body);
+  font-size: 14.5px;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+/* ── Экран успеха ── */
+.success {
+  justify-content: center;
+  text-align: center;
+  padding-left: 26px;
+  padding-right: 26px;
+}
+.success__badge {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--r-pill);
+  background: var(--lime);
+  color: var(--on-lime);
+  font-size: 34px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 22px;
+}
+.success__title {
+  font-size: 25px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-bottom: 12px;
+}
+.success__text {
+  font-size: 14.5px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 28px;
+}
