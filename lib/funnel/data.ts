@@ -1,8 +1,10 @@
 // ═════════════════════════════════════════════════════════════
 //  Контент воронки — копирайт финальный, из хендоффа.
 //
-//  Картинки сгенерированы в Higgsfield и лежат на CDN — это
-//  примеры, продакшн заменит своими (см. README хендоффа).
+//  Картинки сгенерированы в Higgsfield (примеры, продакшн заменит
+//  своими — см. README хендоффа). Лежат локально в /public/img,
+//  ужаты под фактические слоты (retina ×2): q1-превью ≤480px,
+//  до/после ≤600px, JPEG. Оригиналы с CDN весили по ~6 МБ.
 //
 //  ВАЖНО: счётчики соцдоказательств (counter) — из хендоффа,
 //  «числа брать из реальной статистики». TODO(data): подставить
@@ -16,9 +18,6 @@ export const PRICES = {
   weekly: 599, // автопродление, р. в неделю
   interceptPromo: 39, // скидка ТОЛЬКО на экране перехвата (А/Б-тест)
 };
-
-const CDN =
-  "https://d8j0ntlcm91z4.cloudfront.net/user_3F2Chcs0SiSARxkrTaLPqHwVq8C/";
 
 export interface Review {
   text: string;
@@ -61,11 +60,9 @@ export const SCENARIO_DATA: Record<Scenario, ScenarioData> = {
       },
     ],
     img: {
-      q1: CDN + "hf_20260902_095825_f9e5344f-37e8-4749-8d10-948aea55c6f9.png",
-      before:
-        CDN + "hf_20260902_095825_0cac536d-a0db-4a1a-a3fa-d7f8b713e4be.png",
-      after:
-        CDN + "hf_20260902_095928_c1e84018-0ad8-4f5e-96fd-9fb7b71354dc.png",
+      q1: "/img/dating-q1.jpg",
+      before: "/img/dating-before.jpg",
+      after: "/img/dating-after.jpg",
     },
   },
   social: {
@@ -85,11 +82,9 @@ export const SCENARIO_DATA: Record<Scenario, ScenarioData> = {
       { text: "Друзья спрашивают, где снималась. Нигде :)", who: "Оля" },
     ],
     img: {
-      q1: CDN + "hf_20260902_101054_405290cb-605f-4f68-93dc-19c112f3eed1.png",
-      before:
-        CDN + "hf_20260902_101054_cdd5d9e4-5ffc-4691-a7b3-172b465be345.png",
-      after:
-        CDN + "hf_20260902_101201_04cb47cc-95ad-417d-9145-4e2c69bf821f.png",
+      q1: "/img/social-q1.jpg",
+      before: "/img/social-before.jpg",
+      after: "/img/social-after.jpg",
     },
   },
   work: {
@@ -112,11 +107,9 @@ export const SCENARIO_DATA: Record<Scenario, ScenarioData> = {
       { text: "Поставил на резюме и в почту. Солидно.", who: "Игорь" },
     ],
     img: {
-      q1: CDN + "hf_20260902_095826_08cab532-5ad1-420a-8b40-d3b66f3d7eb3.png",
-      before:
-        CDN + "hf_20260902_095825_031e7a1a-e8cc-442a-84b5-85112ce6d894.png",
-      after:
-        CDN + "hf_20260902_095928_c22919ab-f7d1-4ee3-88c3-0108d69884a5.png",
+      q1: "/img/work-q1.jpg",
+      before: "/img/work-before.jpg",
+      after: "/img/work-after.jpg",
     },
   },
   self: {
@@ -139,11 +132,9 @@ export const SCENARIO_DATA: Record<Scenario, ScenarioData> = {
       },
     ],
     img: {
-      q1: CDN + "hf_20260902_095825_146c9746-068b-4352-9ee1-1784ac41d89c.png",
-      before:
-        CDN + "hf_20260902_095826_53b178de-2697-447c-b984-a888a3a6f87e.png",
-      after:
-        CDN + "hf_20260902_095928_68a625aa-b24c-4537-a7a3-7ac2edf7d5a1.png",
+      q1: "/img/self-q1.jpg",
+      before: "/img/self-before.jpg",
+      after: "/img/self-after.jpg",
     },
   },
 };

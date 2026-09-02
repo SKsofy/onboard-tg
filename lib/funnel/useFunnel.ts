@@ -27,7 +27,7 @@ import {
   trackQuizSkipped,
   trackStepView,
 } from "../analytics";
-import { appUrl } from "./data";
+import { appUrl, SCENARIO_DATA } from "./data";
 import type { Pain, Scenario, Step } from "./types";
 import { isPain, isScenario } from "./types";
 
@@ -187,6 +187,12 @@ export function useFunnel() {
     pickGuard.current = true;
     lsSet(LS_SCENARIO, key);
     urlSet("scenario", key);
+    // Греем «до/после» выбранного сценария: пока пользователь на
+    // втором вопросе и лоадере (~3+ с), пейволл получит фото из кэша.
+    for (const src of [SCENARIO_DATA[key].img.before, SCENARIO_DATA[key].img.after]) {
+      const im = new Image();
+      im.src = src;
+    }
     trackQ1Answer(key);
     setS((p) => ({ ...p, scenario: key, step: "q2", saved: false }));
     // Разрешаем следующий тап после смены экрана.

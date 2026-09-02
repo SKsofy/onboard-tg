@@ -50,12 +50,12 @@ export default function Paywall({
       <div className="ba-grid">
         <div className="ba-cell">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={d.img.before} alt={`До: ${d.beforeAlt}`} />
+          <img src={d.img.before} alt={`До: ${d.beforeAlt}`} fetchPriority="high" />
           <div className="ba-badge ba-badge--before">ДО</div>
         </div>
         <div className="ba-cell">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={d.img.after} alt={`После: ${d.afterAlt}`} />
+          <img src={d.img.after} alt={`После: ${d.afterAlt}`} fetchPriority="high" />
           <div className="ba-badge ba-badge--after">ПОСЛЕ</div>
         </div>
       </div>

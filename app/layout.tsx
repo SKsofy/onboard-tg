@@ -33,6 +33,12 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
+        {/* Превью экрана 1 — background-image, браузер находит их поздно;
+            preload качает сразу с HTML (4 × 20–65 КБ). */}
+        <link rel="preload" as="image" href="/img/dating-q1.jpg" />
+        <link rel="preload" as="image" href="/img/social-q1.jpg" />
+        <link rel="preload" as="image" href="/img/work-q1.jpg" />
+        <link rel="preload" as="image" href="/img/self-q1.jpg" />
       </head>
       <body>{children}</body>
     </html>
