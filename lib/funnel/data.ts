@@ -18,8 +18,8 @@ export const PRICES = {
   interceptPromo: 39, // скидка ТОЛЬКО на экране перехвата (А/Б-тест)
 };
 
-/** Сколько минут держим цену по промокоду из поста (личный таймер). */
-export const PROMO_MINUTES = 15;
+/** Сколько часов держим цену по промокоду (личный таймер с первого захода). */
+export const PROMO_HOURS = 24;
 
 export interface Review {
   text: string;

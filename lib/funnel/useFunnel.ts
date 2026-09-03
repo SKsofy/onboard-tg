@@ -14,8 +14,8 @@
 //  localStorage. Повторный заход того, кто уже дошёл до пейволла, —
 //  сразу пейволл + плашка «цена сохранена».
 //
-//  Таймер промокода: личный дедлайн (now + PROMO_MINUTES) пишется
-//  в localStorage при первом показе пейволла и переживает
+//  Таймер промокода: личный дедлайн (now + PROMO_HOURS, 24 ч)
+//  пишется в localStorage при ПЕРВОМ ЗАХОДЕ в воронку и переживает
 //  перезагрузку — это честный персональный резерв цены, а не
 //  фейковый сброс на каждый заход.
 // ═════════════════════════════════════════════════════════════
@@ -34,7 +34,7 @@ import {
   trackTimerExpired,
   trackWowCta,
 } from "../analytics";
-import { appUrl, PROMO_MINUTES } from "./data";
+import { appUrl, PROMO_HOURS } from "./data";
 import type { Scenario, Step } from "./types";
 import { isScenario } from "./types";
 
@@ -107,7 +107,12 @@ export function useFunnel() {
     lsSet(LS_SCENARIO, scenario);
     registerScenario(scenario);
 
-    const deadline = Number(lsGet(LS_DEADLINE)) || 0;
+    // Личный дедлайн промокода: 24 ч с первого захода.
+    let deadline = Number(lsGet(LS_DEADLINE)) || 0;
+    if (!deadline) {
+      deadline = Date.now() + PROMO_HOURS * 3_600_000;
+      lsSet(LS_DEADLINE, String(deadline));
+    }
 
     // Дев-хелпер: ?step=<name> открывает экран напрямую.
     const devStep = q.get("step") as Step | null;
@@ -134,16 +139,11 @@ export function useFunnel() {
     trackStepView(s.step, { scenario: s.scenario });
   }, [s.step, s.scenario]);
 
-  // ── Пейволл: назначаем личный дедлайн промокода при первом показе ──
+  // ── Пейволл: помечаем «видел» для повторных заходов ──
   useEffect(() => {
     if (s.step !== "paywall") return;
     lsSet(LS_PAYWALL_SEEN, "1");
-    if (!s.deadline) {
-      const d = Date.now() + PROMO_MINUTES * 60_000;
-      lsSet(LS_DEADLINE, String(d));
-      setS((p) => (p.deadline ? p : { ...p, deadline: d }));
-    }
-  }, [s.step, s.deadline]);
+  }, [s.step]);
 
   // ── Перехват ухода: кнопка «назад» браузера на пейволле ──
   const stepRef = useRef(s.step);
