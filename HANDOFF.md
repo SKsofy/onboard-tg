@@ -28,7 +28,7 @@ npm run dev        # http://localhost:3003/start
 | `lib/funnel/useFunnel.ts` | всё состояние + **мок оплаты** (`pay()`, маркер `TODO(backend)`) |
 | `lib/funnel/data.ts` | весь контент: тексты, цены, отзывы, FAQ, пути картинок |
 | `lib/analytics.ts` | PostHog, реестр — `docs/ANALYTICS.md` |
-| `public/img/` | картинки (ужатые примеры Higgsfield — заменить продакшн-ассетами) |
+| `public/img/` | боевые креативы до/после (сгенерированы в Higgsfield специально под воронку — замены не требуют) |
 
 ## Что нужно от бэка (по ТЗ)
 
